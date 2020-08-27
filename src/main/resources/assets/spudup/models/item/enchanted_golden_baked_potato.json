@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "spudup:item/enchanted_golden_baked_potato"
+  }
+}

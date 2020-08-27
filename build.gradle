@@ -1,0 +1,156 @@
+buildscript {
+    repositories {
+        maven { url = "https://files.minecraftforge.net/maven" }
+        jcenter()
+        mavenCentral()
+    }
+    // This is only here while FG is under active development
+    configurations.classpath {
+        resolutionStrategy {
+            cacheDynamicVersionsFor 10, "seconds"
+            cacheChangingModulesFor 0, "seconds"
+        }
+    }
+    dependencies {
+        classpath group: "net.minecraftforge.gradle", name: "ForgeGradle", version: "3.+", changing: true
+    }
+}
+
+apply plugin: 'idea'
+apply plugin: "net.minecraftforge.gradle"
+
+//adds the build number to the end of the version string if on a build server
+String build_number = System.getenv().BUILD_NUMBER
+if (build_number == null) {
+    build_number = "9999"
+}
+
+String semver = "${major}.${minor}.${patch}"
+version = "${semver}.${build_number}"
+group = project.modGroup // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = project.modName
+
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+compileJava {
+    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    maven { url 'https://repo1.maven.org/maven2' }
+}
+
+sourceSets {
+    main
+    test
+}
+
+configurations {
+    apiCompile.extendsFrom(compile)
+}
+
+dependencies {
+    minecraft([
+            group  : "${project.forgeGroup}",
+            name   : "forge",
+            version: "${project.mcVersion}-${project.forgeVersion}"
+    ])
+}
+
+minecraft {
+    mappings channel: 'snapshot', version: project.mcpMappings
+
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    runs {
+        client {
+            property 'forge.logging.console.level', 'debug'
+            workingDirectory project.file('run')
+            mods {
+                extendedslabs {
+                    source sourceSets.main
+                }
+            }
+        }
+        server {
+            property 'forge.logging.console.level', 'debug'
+            workingDirectory project.file('run')
+            mods {
+                extendedslabs {
+                    source sourceSets.main
+                }
+            }
+        }
+        data {
+            property 'forge.logging.console.level', 'debug'
+            workingDirectory project.file('run')
+            args '--mod', 'extendedslabs', '--all', '--output', file('src/generated/resources/')
+            mods {
+                extendedslabs {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+// prevent java 8's strict doclint for javadocs from failing builds
+if (JavaVersion.current().isJava8Compatible()) {
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+jar {
+    from sourceSets.main.output.classesDirs
+    from sourceSets.main.output.resourcesDir
+
+    manifest {
+        attributes([
+                "Specification-Title": "Extended Slabs +",
+                "Specification-Vendor": "Blackout",
+                "Specification-Version": "1", // We are version 1 of ourselves
+                "Implementation-Title": project.name,
+                "Implementation-Version": version,
+                "Implementation-Vendor" :"Blackout",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = "javadoc"
+    from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+    classifier = "sources"
+    from sourceSets.main.allJava
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+task("uploadJars", dependsOn: "build") {
+    description = "uploads JARs"
+    if (project.hasProperty("local_maven")) {
+        apply plugin: "maven"
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    repository(url: "file://${local_maven}")
+                }
+            }
+        }
+    }
+}
+
+idea {
+    module {
+        for (String excludeDirName in ["run", "out", "logs", "gradle"]) {
+            File excludeDir = new File(projectDir, excludeDirName)
+            excludeDirs.add(excludeDir)
+        }
+    }
+}

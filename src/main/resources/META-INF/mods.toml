@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[31,)"
+issueTrackerURL="https://github.com/Blackout03/extended-foods/issues"
+
+[[mods]]
+    modId="spudup"
+    version="${file.jarVersion}"
+    displayName="SpudUp!"
+    displayURL=""
+    updateJSONURL="https://raw.githubusercontent.com/potatomodders/Version/master/spudup_update.json"
+    logoFile="examplemod.png"
+    credits="Blackout, Crispy"
+    authors="Potatocult"
+    description='''MORE POTATOES.'''
+
+[[dependencies.versecraft]]
+    modId="forge"
+    mandatory=true
+    versionRange="[31,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.versecraft]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.15.2]"
+    ordering="NONE"
+    side="BOTH"
